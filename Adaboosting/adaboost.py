@@ -91,7 +91,7 @@ def asaBoostingTrainDS(data_arr,class_labels,num_it=40):
         if error_rate == 0:
             print('error rate = 0,结束训练')
             break
-    return weak_class_est
+    return weak_class_est, agg_class_est  # 返回弱分类器列表和类预测估计
 
 
 def adaClassify(dattocalss,classifier_arr):
@@ -107,6 +107,38 @@ def adaClassify(dattocalss,classifier_arr):
         # print('预测是：',agg_class_est)
     return np.sign(agg_class_est)
 
+def plotROC(predStrengths, classLabels):
+    import matplotlib.pyplot as plt
+    cur = (1.0,1.0)
+    y_sum = 0.0  # 用于计算AUC的值，曲线下面积
+    num_pos_class = sum(np.array(classLabels) == 1.0)  # 数组过滤，计算正例数目
+    y_step = 1/float(num_pos_class)
+    x_step = 1/float(len(classLabels)-num_pos_class)
+
+    sorted_indicies = predStrengths.argsort()
+
+    fig = plt.figure()  # 构建画笔
+    fig.clf()
+    ax = plt.subplot(111)
+
+    for index in sorted_indicies.tolist()[0]:  # 这里是二维矩阵，形状是1*n，所以要0索引
+        if classLabels[index] == 1.0:
+            delx = 0
+            dely = y_step
+        else:
+            delx = x_step
+            dely = 0
+            y_sum += cur[1]
+        ax.plot([cur[0],cur[0]-delx],[cur[1],cur[1]-dely],c = 'b')
+        cur = (cur[0]-delx,cur[1]-dely)
+    ax.plot([0,1],[0,1],'b--') # 虚线
+    plt.xlabel('FP rate')
+    plt.ylabel('TP rate')
+    plt.title('ROC')
+    ax.axis([0,1,0,1])
+    plt.show()
+    print('AUC is ',y_sum*x_step)
+
 
 
 if __name__ == '__main__':
@@ -118,16 +150,19 @@ if __name__ == '__main__':
     # best_stump, min_error, best_class_est = buildStump(data_mat,class_labels,D)
     # print(best_stump)
     # print(best_class_est)
-    classifer = asaBoostingTrainDS(data_mat,class_labels,10)
+    classifer, agg_class_est = asaBoostingTrainDS(data_mat,class_labels,10)
     # print(adaClassify([[0,0],[5,5]],classifer))
-    test_arr, test_labels = loadDataSet('horseColicTest2.txt')
-    prd = adaClassify(test_arr,classifer)
-    # print(len(test_labels)) # 67
-    err_arr = np.mat(np.ones((len(test_labels),1)))
 
-    print(prd)
+    # test_arr, test_labels = loadDataSet('horseColicTest2.txt')
+    # prd = adaClassify(test_arr,classifer)
+    # # print(len(test_labels)) # 67
+    # err_arr = np.mat(np.ones((len(test_labels),1)))
+    #
+    # print(prd)
+    #
+    # print(err_arr[prd != np.mat(test_labels).T].sum())  # 错误数量
 
-    print(err_arr[prd != np.mat(test_labels).T].sum())
+    plotROC(agg_class_est.T,class_labels)
 
 
 

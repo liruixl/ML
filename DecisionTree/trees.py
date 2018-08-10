@@ -44,6 +44,9 @@ def splitDataSet(dataset,axis,value):
 
 
 def chooseBestFeatureToSplit(dataset):
+    '''ID3算法
+    
+    '''
     numFeatures = len(dataset[0]) - 1
     base_entropy = Ent(dataset)
     best_info_gain = 0.0
